@@ -7,6 +7,7 @@ static const oid OID_SYSUPTIME[] = { 1, 3, 6, 1, 2, 1, 1, 3, 0 };
 static const oid OID_SNMPTRAP[] = { 1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0 };
 static const oid OID_CPU_USED[] = { 1, 3, 6, 1, 4, 1, 2021, 11, 9, 0 };
 static const oid OID_STORAGE_USED[] = { 1, 3, 6, 1, 2, 1, 25, 2, 3, 1, 6 };
+static const oid OID_SYSTEM_BAISC_INFO[] = { 1, 3, 6, 1, 2, 1, 1, 1, 0 };
 enum ErrorType {
     NO_ERROR,
     SNMP_CREATE_PDU_ERROR,
@@ -14,12 +15,14 @@ enum ErrorType {
     SNMP_ADD_VAR_OID_SNMPTRAP_ERROR,
     SNMP_ADD_VAR_OID_CPU_USED_ERROR,
     SNMP_ADD_VAR_OID_STORAGE_USED_ERROR,
+    SNMP_ADD_VAR_OID_SYSTEM_BASIC_INFO_ERROR,
     SNMP_SEND_TRAP_ERROR,
     UNKNOWN_TYPE_ERROR
 };
 enum SendType {
     SEND_LOCAL_CPU_USED,
-    SEND_LOCAL_STORAGE_USED
+    SEND_LOCAL_STORAGE_USED,
+    SEND_SYSTEM_BASIC_INFO
 };
 class snmptrap_client {
 public:
@@ -50,7 +53,10 @@ public:
         return send_locale_oid("UCD-SNMP-MIB::ssCpuUser.0", val, SEND_LOCAL_CPU_USED);
     }
     int send_storage_used(const char *val) {
-        return send_locale_oid("HOST-RESOURCES-MIB::hrStorage", val, SEND_LOCAL_STORAGE_USED);
+        return send_locale_oid("HOST-RESOURCES-MIB::hrStorageUsed", val, SEND_LOCAL_STORAGE_USED);
+    }
+    int send_system_basic_info(const char *val) {
+        return send_locale_oid("SNMPv2-MIB::sysDescr.0", val, SEND_SYSTEM_BASIC_INFO);
     }
 private:
     inline void init_client() {
@@ -95,6 +101,12 @@ private:
             if (snmp_add_var(pdu, OID_STORAGE_USED, OID_LENGTH(OID_STORAGE_USED), 'i', val)) {
                 snmp_free_pdu(pdu);
                 return SNMP_ADD_VAR_OID_STORAGE_USED_ERROR;
+            }
+            break;
+        case SEND_SYSTEM_BASIC_INFO:
+            if (snmp_add_var(pdu, OID_SYSTEM_BAISC_INFO, OID_LENGTH(OID_SYSTEM_BAISC_INFO), 's', val)) {
+                snmp_free_pdu(pdu);
+                return SNMP_ADD_VAR_OID_SYSTEM_BASIC_INFO_ERROR;
             }
             break;
         default:
